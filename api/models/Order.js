@@ -35,13 +35,6 @@ module.exports = {
       required: true
     },
 
-    orderNumber: {
-      type: 'number',
-      // sails-notes: cannot be required if its autoIncrement: true
-      // required: true,
-      autoIncrement: true
-    },
-
     cookedAt: {
       type: 'number',
       description: 'The most recent time at which the status was set to "COOKED"'
