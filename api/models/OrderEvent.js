@@ -20,8 +20,7 @@ module.exports = {
 
     clientId: {
       type: 'string',
-      required: true,
-      unique: true
+      required: true
     },
 
     eventName: {
@@ -44,18 +43,18 @@ module.exports = {
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
-    // OrderEvent.order one to one-or-many with Order.events
-    // OrderEvent.belongsTo(Order) - Order.hasMany(OrderEvent)
-    masjid: {
-      model: 'masjid',
-      required: true
-    },
-
     // OrderEvent.sender one to zero-or-many with User.events
     // OrderEvent.belongsTo(User) - User.hasMany(OrderEvent)
     sender: {
       model: 'user'
     },
+
+    // // OrderEvent.order one to one-or-many with Order.events
+    // // OrderEvent.belongsTo(Order) - Order.hasMany(OrderEvent)
+    // order: {
+    //   model: 'order',
+    //   required: true
+    // },
 
   },
 

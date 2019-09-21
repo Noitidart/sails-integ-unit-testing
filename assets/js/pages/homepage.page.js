@@ -4,6 +4,7 @@ parasails.registerPage('homepage', {
   //  ╩╝╚╝╩ ╩ ╩╩ ╩╩═╝  ╚═╝ ╩ ╩ ╩ ╩ ╚═╝
   data: {
     heroHeightSet: false,
+    isStreamingTestData: false
   },
 
   //  ╦  ╦╔═╗╔═╗╔═╗╦ ╦╔═╗╦  ╔═╗
@@ -30,7 +31,19 @@ parasails.registerPage('homepage', {
     },
 
     startStreamingTestData: async function() {
-      alert('hi');
+      try {
+        const res = await fetch('/api/order-events/stream-fake-events', {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': SAILS_LOCALS._csrf },
+        });
+        if (res.status !== 204) {
+          throw new Error(`Failed to start streaming fake events, status code was ${res.status}.`);
+        } else {
+          this.isStreamingTestData = true;
+        }
+      } catch(err) {
+        alert(err.message);
+      }
     },
 
     // Private methods not tied to a particular DOM event are prefixed with _

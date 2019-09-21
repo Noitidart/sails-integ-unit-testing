@@ -27,7 +27,15 @@
             </div>
             <h4>Fake It</h4>
             <p class="text-muted">
-              <button type="button" class="btn btn-sm btn-outline-info" @click="startStreamingTestData()">Start streaming test data</button>
+                <span v-if="isStreamingTestData">You already started the stream of fake events.</span>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-info"
+                  @click="startStreamingTestData()"
+                  v-else
+                >
+                  Start streaming test data
+                </button>
             </p>
           </div>
           <div class="feature pt-4 pt-sm-0 mb-4 mb-sm-0 col-sm">

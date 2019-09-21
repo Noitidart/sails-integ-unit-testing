@@ -29,7 +29,9 @@ module.exports = {
       throw {redirect:'/welcome'};
     }
 
-    return {};
+    return {
+      isStreamingTestData: global.isStreamingTestData
+    };
 
   }
 

@@ -56,11 +56,11 @@ module.exports = {
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
+    // One way association
     // Order.events one-or-many to one with OrderEvent.order
     // Order.hasMany(OrderEvent) - OrderEvent.belongsTo(Order)
     events: {
       collection: 'orderevent',
-      via: 'order'
     },
 
   },
