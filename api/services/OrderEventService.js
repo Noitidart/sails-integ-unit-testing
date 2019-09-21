@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { pick } = require('lodash');
 
 const OrderEventService = {
 
@@ -18,10 +19,12 @@ const OrderEventService = {
 
     const orderEvent = await OrderEvent.create(formattedEvent).fetch();
 
+    const partialOrder = pick(orderEvent, 'clientId', 'destination', 'name');
+    partialOrder.status = eventName;
     if (eventName === 'CREATED') {
-      OrderService.createOrder(orderEvent);
+      OrderService.createOrder(partialOrder, orderEvent);
     } else {
-      OrderService.updateOrder(orderEvent);
+      OrderService.updateOrder(partialOrder, orderEvent);
     }
 
   },

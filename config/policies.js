@@ -24,4 +24,6 @@ module.exports.policies = {
 
   'order-events/stream-fake-events': true,
 
+  'orders/get-orders': true,
+
 };

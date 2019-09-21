@@ -65,5 +65,7 @@ module.exports.routes = {
 
   'POST /api/order-events/stream-fake-events': { action: 'order-events/stream-fake-events' },
   'POST /api/v1/order-events': { action: 'order-events/create-order-event' },
+  'GET /api/v1/orders': { action: 'orders/get-orders', isSocket: true },
+  'PATCH /api/v1/orders/:clientId': { action: 'orders/update-order' },
 
 };
