@@ -33,56 +33,50 @@ function DataViews({ _csrf, me }) {
 
   // listen for socket events
   useEffect(() => {
-    const handleOrderCreated = (order) => {
-      console.log('order CREATED, order number:', order.orderNumber);
-      setPagination(produce(draft => {
-        const insertAtIndex = draft.network.results.findIndex(result => order.orderNumber > result.orderNumber)
-        if (insertAtIndex === -1) {
-          draft.network.results.push(order);
-        } else {
-          draft.network.results.splice(insertAtIndex, 0, order);
-        }
-        draft.network.total++;
-      }));
-    };
-
-    const handleOrderUpdated = (order) => {
-      console.log('order updated, order number:', order.orderNumber);
+    const handleOrderCreatedOrUpdated = order => {
+      console.log('order created or updated, order number:', order.orderNumber);
       const isUpdatedOrderInactive = ['DELIVERED', 'CANCELLED'].includes(order.status);
-      setPagination(produce(draft => {
-        const prevOrderIndex = draft.network.results.findIndex(prevOrder => prevOrder.id === order.id);
-        const prevOrderDraft = draft.network.results[prevOrderIndex];
-        if (isUpdatedOrderInactive) {
-          if (prevOrderDraft) {
-            // need to remove it
-            draft.network.results.splice(prevOrderIndex, 1);
+      setPagination(
+        produce(draft => {
+          const prevOrderIndex = draft.network.results.findIndex(prevOrder => prevOrder.id === order.id);
+          const prevOrderDraft = draft.network.results[prevOrderIndex];
+          if (isUpdatedOrderInactive) {
+            if (prevOrderDraft) {
+              // need to remove it
+              console.log('removing it as its inactive and currently present');
+              draft.network.results.splice(prevOrderIndex, 1);
+              draft.network.total--;
+            }
           } else {
-            // need to update it
-            Object.assign(prevOrderDraft, order);
+            if (!prevOrderDraft) {
+              // need to add it
+              console.log('adding it as its active but not present');
+              // find index of element that has an orderNumber higher then incoming order's
+              const insertAtIndex = draft.network.results.findIndex(result => result.orderNumber > order.orderNumber);
+              if (insertAtIndex === -1) {
+                draft.network.results.push(order);
+              } else {
+                draft.network.results.splice(insertAtIndex, 0, order);
+              }
+              draft.network.total++;
+            } else {
+              // need to update it
+              console.log('updating it as its active and present');
+              Object.assign(prevOrderDraft, order);
+            }
           }
-        } else {
-          if (!prevOrderDraft) {
-            // need to add it
-            handleOrderCreated(order);
-          } else {
-            // need to update it
-            Object.assign(prevOrderDraft, order);
-          }
-        }
-      }));
+        })
+      );
     };
 
     if (pagination.viewType === ViewType.ACTIVE) {
-      console.log('registering handlers');
-      io.socket.on('order-created', handleOrderCreated);
-      io.socket.on('order-updated', handleOrderUpdated);
+      io.socket.on('order-created-or-updated', handleOrderCreatedOrUpdated);
     }
 
     return () => {
       if (pagination.viewType === ViewType.ACTIVE) {
         console.log('unregistering handlers');
-        io.socket.off('order-created', handleOrderCreated);
-        io.socket.off('order-updated', handleOrderUpdated);
+        io.socket.off('order-created-or-updated', handleOrderCreatedOrUpdated);
       }
     };
   }, [pagination.viewType]);
@@ -97,7 +91,6 @@ function DataViews({ _csrf, me }) {
     );
 
     (async () => {
-
       // slow it down so the speed doesn't give people a headache
       await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -169,6 +162,10 @@ function DataViews({ _csrf, me }) {
     );
   };
 
+  const startIndex = pagination.size * (pagination.page - 1);
+  const endIndex = startIndex + pagination.size;
+  const pageOrders = pagination.network.results.slice(startIndex, endIndex);
+
   return (
     <div className="my-5">
       <button type="button" className="btn btn-outline-info float-right" onClick={toggleViewType}>
@@ -179,7 +176,9 @@ function DataViews({ _csrf, me }) {
 
       {pagination.network.isLoading && <p className="lead text-center">Loading...</p>}
 
-      {!pagination.network.isLoading && pagination.network.error && <p className="lead text-center">An error occured. {pagination.network.error}</p>}
+      {!pagination.network.isLoading && pagination.network.error && (
+        <p className="lead text-center">An error occured. {pagination.network.error}</p>
+      )}
 
       {networkOk && (
         <>
@@ -327,9 +326,11 @@ function DataViews({ _csrf, me }) {
         </>
       )}
 
-      {networkOk && pagination.network.results.length === 0 && <p className="lead text-center">No orders yet</p>}
+      {networkOk && pageOrders.length === 0 && (
+        <p className="lead text-center">{pagination.network.total > 0 ? 'No orders on this page' : 'No orders'}</p>
+      )}
 
-      {networkOk && pagination.network.results.length > 0 && (
+      {networkOk && pageOrders.length > 0 && (
         <div>
           <div className="row font-weight-bold text-center mb-1">
             <div className="col-1">#</div>
@@ -339,7 +340,7 @@ function DataViews({ _csrf, me }) {
             <div className="col-2">Last Updated</div>
             <div className="col-1" />
           </div>
-          {pagination.network.results.map(result => (
+          {pageOrders.map(result => (
             <EditableRow
               key={result.id}
               result={result}

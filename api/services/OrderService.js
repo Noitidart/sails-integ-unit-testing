@@ -1,29 +1,14 @@
-const { pick, inRange } = require('lodash');
+const { pick } = require('lodash');
 
-const { getAllRooms, getRoomsOfSocket } = require('../../lib/sockets');
+const { getRoomsOfSocket } = require('../../lib/sockets');
 
-const ALL_ACTIVE_ORDERS_ROOM = 'active-orders';
-const ACTIVE_ORDERS_ROOM_PREFIX = 'active-orders-';
+const ACTIVE_ORDERS_ROOM = 'active-orders';
 
 const OrderService = {
 
-  broadcastOrder: function(order, wasJustCreated=false) {
+  broadcastOrder: function(order) {
 
-    const broadcast = room => {
-      sails.sockets.broadcast(room, wasJustCreated ? 'order-created' : 'order-updated', order)
-    };
-
-    const rooms = getAllRooms();
-    if (rooms.includes(ALL_ACTIVE_ORDERS_ROOM)) broadcast()
-
-    for (const room of rooms) {
-      if (room.startsWith(ACTIVE_ORDERS_ROOM_PREFIX)) {
-        const [,,minOrderNumberInc, maxOrderNumberInc] = room.split('-');
-        if (inRange(order.orderNumber, minOrderNumberInc, maxOrderNumberInc)) {
-          broadcast(room);
-        }
-      }
-    }
+    sails.sockets.broadcast(ACTIVE_ORDERS_ROOM, 'order-created-or-updated', order)
 
   },
 
@@ -42,7 +27,7 @@ const OrderService = {
       await Order.addToCollection(order.id, 'events', orderEvent.id);
     }
 
-    OrderService.broadcastOrder(order, true);
+    OrderService.broadcastOrder(order);
 
   },
 
@@ -77,30 +62,11 @@ const OrderService = {
     }).populate('events', { sort: 'createdAt ASC' });
 
     // check if subscribed to another order- room, if it is, then leave it
-    const currentRooms = await getRoomsOfSocket(req);
-    const leavePromises = [];
-    for (const room of currentRooms) {
-      if (room === ALL_ACTIVE_ORDERS_ROOM || room.startsWith(ACTIVE_ORDERS_ROOM_PREFIX)) {
-        leavePromises.push(new Promise(resolve => sails.sockets.leave(req, room, resolve)));
-      }
-    }
-    await Promise.all(leavePromises);
-
-    if (type === 'active') {
-      // join the order room for this page
-      let room;
-      if (size) {
-        // set min and max order numbers (inclusive) on this room
-        const firstOrderNumberOnPage = orders[0] ? orders[0].orderNumber : 0;
-        const minOrderNumberInc = firstOrderNumberOnPage;
-        const maxOrderNumberInc = minOrderNumberInc + size - 1;
-        room = ACTIVE_ORDERS_ROOM_PREFIX + `${minOrderNumberInc}-${maxOrderNumberInc}`;
-      } else {
-        room = ALL_ACTIVE_ORDERS_ROOM;
-      }
-
-      console.log('joining room:', room);
-      const joinErr = await new Promise(resolve => sails.sockets.join(req, room, resolve));
+    const isInActiveOrdersRoom = (await getRoomsOfSocket(req)).includes(ACTIVE_ORDERS_ROOM);
+    if (isInActiveOrdersRoom && type !== 'active') {
+      await new Promise(resolve => sails.sockets.leave(req, ACTIVE_ORDERS_ROOM, resolve))
+    } else if (!isInActiveOrdersRoom && type === 'active') {
+      const joinErr = await new Promise(resolve => sails.sockets.join(req, ACTIVE_ORDERS_ROOM, resolve));
       if (joinErr) throw new Error('SOCKET_JOIN_ERROR');
     }
 
