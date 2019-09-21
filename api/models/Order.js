@@ -35,6 +35,11 @@ module.exports = {
       required: true
     },
 
+    orderNumber: {
+      type: 'number',
+      description: 'This is auto-incrmented.'
+    },
+
     cookedAt: {
       type: 'number',
       description: 'The most recent time at which the status was set to "COOKED"'
@@ -58,5 +63,15 @@ module.exports = {
     },
 
   },
+
+  // Lifecycle
+
+  beforeCreate: function(valuesToSet, proceed) {
+    Sequence.next('order', (err, num) => {
+      if (err) return proceed(err);
+      valuesToSet.orderNumber = num;
+      proceed();
+    });
+  }
 
 };
