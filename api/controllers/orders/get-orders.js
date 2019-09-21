@@ -36,7 +36,7 @@ module.exports = {
 
   fn: async function (inputs, exits) {
 
-    return exits.success(await OrderService.getOrders(inputs.type, pick(inputs, 'page', 'size')));
+    return exits.success(await OrderService.getOrders(inputs.type, this.req, pick(inputs, 'page', 'size')));
 
   }
 

@@ -33,21 +33,54 @@ function DataViews({ _csrf, me }) {
 
   // listen for socket events
   useEffect(() => {
-    const handleOrderCreated = (msg, ...args) => {
-      console.log('order created, msg:', msg, 'args:', args);
+    const handleOrderCreated = (order) => {
+      console.log('order CREATED, order number:', order.orderNumber);
+      setPagination(produce(draft => {
+        const insertAtIndex = draft.network.results.findIndex(result => order.orderNumber > result.orderNumber)
+        if (insertAtIndex === -1) {
+          draft.network.results.push(order);
+        } else {
+          draft.network.results.splice(insertAtIndex, 0, order);
+        }
+        draft.network.total++;
+      }));
     };
 
-    const handleOrderUpdated = (msg, ...args) => {
-      console.log('order updated, msg:', msg, 'args:', args);
+    const handleOrderUpdated = (order) => {
+      console.log('order updated, order number:', order.orderNumber);
+      const isUpdatedOrderInactive = ['DELIVERED', 'CANCELLED'].includes(order.status);
+      setPagination(produce(draft => {
+        const prevOrderIndex = draft.network.results.findIndex(prevOrder => prevOrder.id === order.id);
+        const prevOrderDraft = draft.network.results[prevOrderIndex];
+        if (isUpdatedOrderInactive) {
+          if (prevOrderDraft) {
+            // need to remove it
+            draft.network.results.splice(prevOrderIndex, 1);
+          } else {
+            // need to update it
+            Object.assign(prevOrderDraft, order);
+          }
+        } else {
+          if (!prevOrderDraft) {
+            // need to add it
+            handleOrderCreated(order);
+          } else {
+            // need to update it
+            Object.assign(prevOrderDraft, order);
+          }
+        }
+      }));
     };
 
     if (pagination.viewType === ViewType.ACTIVE) {
+      console.log('registering handlers');
       io.socket.on('order-created', handleOrderCreated);
       io.socket.on('order-updated', handleOrderUpdated);
     }
 
     return () => {
       if (pagination.viewType === ViewType.ACTIVE) {
+        console.log('unregistering handlers');
         io.socket.off('order-created', handleOrderCreated);
         io.socket.off('order-updated', handleOrderUpdated);
       }
