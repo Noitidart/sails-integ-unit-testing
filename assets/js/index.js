@@ -91,6 +91,11 @@ const pages = [
     isVue: true,
     containerId: 'faq',
     lazyComponent: () => import('./pages/faq.page')
+  },
+  {
+    isVue: false,
+    containerId: 'data-views',
+    lazyComponent: () => import('./components/DataViews')
   }
 ];
 
@@ -100,7 +105,7 @@ for (const page of pages) {
     page.lazyComponent().then(module => {
       if (!page.isVue) {
         const Component = module.default;
-        render(<Component {...SAILS_LOCALS} />, container);
+        render(<Component {...SAILS_LOCALS} />, document.getElementById(page.containerId));
       }
     });
   }
