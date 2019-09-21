@@ -19,9 +19,9 @@ const OrderEventService = {
     const orderEvent = await OrderEvent.create(formattedEvent).fetch();
 
     if (eventName === 'CREATED') {
-      OrderService.createOrder(orderEvent.id, formattedEvent);
+      OrderService.createOrder(orderEvent);
     } else {
-      OrderService.updateOrder(orderEvent.id, formattedEvent);
+      OrderService.updateOrder(orderEvent);
     }
 
   },

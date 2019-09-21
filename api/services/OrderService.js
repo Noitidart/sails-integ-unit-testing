@@ -1,13 +1,25 @@
+const { pick } = require('lodash');
 
 const OrderService = {
 
-    broadcastOrder: function() {},
+  broadcastOrder: function() {},
 
-    createOrder: function() {},
+  createOrder: async function(orderEvent) {
 
-    getOrders: function() {},
+    const order = await Order.create({
+      ...pick(orderEvent, 'clientId', 'name', 'destination'),
+      status: orderEvent.eventName
+    }).fetch();
 
-    updateOrder: function() {}
+    await Order.addToCollection(order.id, 'events', orderEvent.id);
+
+    OrderService.broadcastOrder(order);
+
+  },
+
+  getOrders: function() {},
+
+  updateOrder: function() {}
 
 };
 

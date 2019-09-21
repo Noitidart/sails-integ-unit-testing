@@ -37,7 +37,8 @@ module.exports = {
 
     orderNumber: {
       type: 'number',
-      required: true,
+      // sails-notes: cannot be required if its autoIncrement: true
+      // required: true,
       autoIncrement: true
     },
 
@@ -56,8 +57,8 @@ module.exports = {
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
-    // One way association
-    // Order.events one-or-many to one with OrderEvent.order
+    // One way association - meaning there is no attribute on OrderEvent (ie: OrderEvent.order)
+    // Order.events one-or-many to one with OrderEvent (unfortunately even though i want one-or-many, this is zero-or-many because at creation time I can't pass in OrderEvent.id i have to do addToCollection)
     // Order.hasMany(OrderEvent) - OrderEvent.belongsTo(Order)
     events: {
       collection: 'orderevent',
