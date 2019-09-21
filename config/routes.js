@@ -64,5 +64,6 @@ module.exports.routes = {
 
 
   'POST /api/order-events/stream-fake-events': { action: 'order-events/stream-fake-events' },
+  'POST /api/v1/order-events': { action: 'order-events/create-order-event' },
 
 };
