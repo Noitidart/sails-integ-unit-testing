@@ -29,6 +29,10 @@ parasails.registerPage('homepage', {
       }, 500);
     },
 
+    startStreamingTestData: async function() {
+      alert('hi');
+    },
+
     // Private methods not tied to a particular DOM event are prefixed with _
     _setHeroHeight: function() {
       var $hero = this.$find('[full-page-hero]');
