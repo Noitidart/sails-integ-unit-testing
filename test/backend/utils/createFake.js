@@ -108,6 +108,9 @@ async function createFake(model, prefills = {}) {
 
           } else {
 
+            if (meta.isIn)
+              return faker.random.arrayElement(meta.isIn);
+
             // console.log(`Using faker to set "${modelName}.${name}"`);
             const maybeUnique = meta.unique ? faker.unique : attempt;
 

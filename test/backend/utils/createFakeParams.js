@@ -13,7 +13,9 @@ function createFakeParams(inputs) {
         if (desc.required) {
 
             const value = (() => {
-                if (desc.isEmail)
+                if (desc.isIn)
+                    return faker.random.arrayElement(desc.isIn);
+                else if (desc.isEmail)
                     return faker.internet.email;
                 else if (['number', 'boolean'].includes(desc.type))
                     return faker.random[desc.type];
