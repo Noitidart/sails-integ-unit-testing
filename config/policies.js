@@ -22,7 +22,7 @@ module.exports.policies = {
   'legal/view-privacy': true,
   'deliver-contact-form-message': true,
 
-  'order-events/stream-fake-events': true,
+  'orders/stream-fake-orders': true,
 
   'orders/get-orders': true,
 

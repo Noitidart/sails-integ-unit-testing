@@ -93,7 +93,7 @@ function DataViews({ _csrf, me }) {
           io.socket.get(
             '/api/v1/orders?' +
               new URLSearchParams({
-                type: pagination.viewType === ViewType.ACTIVE ? 'active' : 'all'
+                onlyActive: pagination.viewType === ViewType.ACTIVE ? true : false
               }),
             resolve
           );

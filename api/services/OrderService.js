@@ -1,57 +1,46 @@
+const fs = require('fs');
 const { pick } = require('lodash');
 
 const { getRoomsOfSocket } = require('../../lib/sockets');
+const { OrderStatus } = require('../../types');
 
 const ACTIVE_ORDERS_ROOM = 'active-orders';
 
 const OrderService = {
-
   broadcastOrder: function(order) {
-
-    sails.sockets.broadcast(ACTIVE_ORDERS_ROOM, 'order-created-or-updated', order)
-
+    sails.sockets.broadcast(ACTIVE_ORDERS_ROOM, 'order-created-or-updated', order);
   },
 
   /**
    *
    * @param {*} partialOrder
-   * @param {OrderEvent} [orderEvent] - if running due to order event, this will associate it. optional.
    */
-  createOrder: async function(partialOrder, orderEvent) {
-
-    const order = await Order.create(
-      pick(partialOrder, 'clientId', 'name', 'destination', 'status'),
-    ).fetch();
-
-    if (orderEvent) {
-      await Order.addToCollection(order.id, 'events', orderEvent.id);
-    }
+  createOrder: async function(partialOrder) {
+    const order = await Order.create(pick(partialOrder, 'clientId', 'name', 'destination', 'status')).fetch();
 
     OrderService.broadcastOrder(order);
-
   },
 
   /**
    * Calls to this must be over socket protocol, because it always does subscribe/unsubscribe
    *
-   * @param {"all" | "active"} type
-   * @param {"all" | "active"} req
+   * @param {boolean} onlyActive
+   * @param {Req} req
    */
-  getOrders: async function(type, req) {
-
+  getOrders: async function(onlyActive, req) {
     if (!req.isSocket) throw new Error('NOT_SOCKET');
 
-    const where = type === 'active' ? { status: { '!=': ['DELIVERED', 'CANCELLED'] } } : undefined;
+    const where = onlyActive ? { status: { '!=': [OrderStatus.DELIVERED, OrderStatus.CANCELLED] } } : undefined;
     const orders = await Order.find({
       where,
-      sort: 'orderNumber ASC',
-    }).populate('events', { sort: 'createdAt ASC' });
+      sort: 'orderNumber ASC'
+    });
 
     // check if subscribed to another order- room, if it is, then leave it
     const isInActiveOrdersRoom = (await getRoomsOfSocket(req)).includes(ACTIVE_ORDERS_ROOM);
-    if (isInActiveOrdersRoom && type !== 'active') {
-      await new Promise(resolve => sails.sockets.leave(req, ACTIVE_ORDERS_ROOM, resolve))
-    } else if (!isInActiveOrdersRoom && type === 'active') {
+    if (isInActiveOrdersRoom && !onlyActive) {
+      await new Promise(resolve => sails.sockets.leave(req, ACTIVE_ORDERS_ROOM, resolve));
+    } else if (!isInActiveOrdersRoom && onlyActive) {
       const joinErr = await new Promise(resolve => sails.sockets.join(req, ACTIVE_ORDERS_ROOM, resolve));
       if (joinErr) throw new Error('SOCKET_JOIN_ERROR');
     }
@@ -64,27 +53,42 @@ const OrderService = {
   /**
    *
    * @param {*} partialOrder
-   * @param {OrderEvent} [orderEvent] - if running due to order event it will udpate it. optional.
    */
-  updateOrder: async function(partialOrder, orderEvent) {
-
-
+  updateOrder: async function(partialOrder) {
     const order = await Order.updateOne({ clientId: partialOrder.clientId }).set({
       ...pick(partialOrder, 'clientId', 'name', 'destination', 'status'),
-      ...partialOrder.status === 'COOKED' && { cookedAt: Date.now() }
+      ...(partialOrder.status === OrderStatus.COOKED && { cookedAt: Date.now() })
     });
 
     if (!order) throw new Error('NOT_FOUND');
 
-    if (orderEvent) {
-      await Order.addToCollection(order.id, 'events', orderEvent.id);
-    }
-
     OrderService.broadcastOrder(order);
 
     return order;
-  }
+  },
 
+  streamFakeOrders: async function() {
+    const fakeEventsTxt = await new Promise((resolve, reject) =>
+      fs.readFile(__dirname + '/challenge_data.json', 'utf8', (err, data) => (err ? reject(err) : resolve(data)))
+    );
+    const fakeEvents = JSON.parse(fakeEventsTxt);
+
+    for (const fakeEvent of fakeEvents) {
+      const partialOrder = {
+        clientId: fakeEvent.id,
+        status: fakeEvent.event_name,
+        ...pick(fakeEvent, 'destination', 'name')
+      };
+
+      setTimeout(() => {
+        if (partialOrder.status === 'CREATED') {
+          OrderService.createOrder(partialOrder);
+        } else {
+          OrderService.updateOrder(partialOrder);
+        }
+      }, fakeEvent.sent_at_second * 1000);
+    }
+  }
 };
 
 module.exports = OrderService;

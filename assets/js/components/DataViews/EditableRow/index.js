@@ -4,12 +4,14 @@ import { Form, Field } from 'react-final-form';
 import moment from 'moment';
 import { pick } from 'lodash';
 
+import { OrderStatus } from '../../../../../types';
+
 function EditableRow({ isLoggedIn, result, _csrf, shouldShowTools }) {
   const [isEditing, setIsEditing] = useState(false);
 
   const submit = async (values, { reset }) => {
     const nextValues = {
-      ...pick(values, 'destination', 'name', 'status'),
+      ...pick(values, 'destination', 'name', 'status')
     };
 
     // slow it down so the speed doesn't give people a headache
@@ -51,11 +53,9 @@ function EditableRow({ isLoggedIn, result, _csrf, shouldShowTools }) {
                   initialValues.status
                 ) : (
                   <Field component="select" name="status" className="form-control" disabled={submitting}>
-                    <option value="CREATED">CREATED</option>
-                    <option value="COOKED">COOKED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                    <option value="DRIVER_RECEIVED">DRIVER_RECEIVED</option>
-                    <option value="DELIVERED">DELIVERED</option>
+                    {Object.keys(OrderStatus).map(status => (
+                      <option value={status}>{status}</option>
+                    ))}
                   </Field>
                 )}
               </div>

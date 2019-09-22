@@ -32,7 +32,7 @@ parasails.registerPage('homepage', {
 
     startStreamingTestData: async function() {
       try {
-        const res = await fetch('/api/order-events/stream-fake-events', {
+        const res = await fetch('/api/orders/stream-fake-orders', {
           method: 'POST',
           headers: { 'X-CSRF-Token': SAILS_LOCALS._csrf },
         });

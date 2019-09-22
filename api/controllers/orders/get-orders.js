@@ -10,10 +10,9 @@ module.exports = {
 
 
   inputs: {
-    type: {
-      type: 'string',
-      required: true,
-      isIn: ['all', 'active']
+    onlyActive: {
+      type: 'boolean',
+      required: true
     }
   },
 
@@ -27,7 +26,7 @@ module.exports = {
 
   fn: async function (inputs, exits) {
 
-    return exits.success(await OrderService.getOrders(inputs.type, this.req));
+    return exits.success(await OrderService.getOrders(inputs.onlyActive, this.req));
 
   }
 

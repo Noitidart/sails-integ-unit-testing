@@ -19,14 +19,9 @@ module.exports = {
   },
 
 
-  fn: async function (inputs, exits) {
+  fn: async function (_inputs, exits) {
 
-    try {
-      await OrderEventService.streamFakeEvents();
-    } catch(err) {
-      sails.log.error(`Failed to start streaming fake events, error: ` + err.message);
-      throw err;
-    }
+    OrderService.streamFakeOrders();
 
     global.isStreamingTestData = true;
 

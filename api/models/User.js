@@ -164,13 +164,6 @@ without necessarily having a billing card.`
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
-    // User.events zero-or-many to one with OrderEvent.sender
-    // User.hasMany(OrderEvent) - OrderEvent.belongsTo(User)
-    events: {
-      collection: 'OrderEvent',
-      via: 'sender'
-    },
-
   },
 
 
