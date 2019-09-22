@@ -1,0 +1,29 @@
+{
+  //   ╔═╗╔═╗╦  ╦╔╗╔╔╦╗┬─┐┌─┐  ┌─┐┬  ┬┌─┐┬─┐┬─┐┬┌┬┐┌─┐
+  //   ║╣ ╚═╗║  ║║║║ ║ ├┬┘│    │ │└┐┌┘├┤ ├┬┘├┬┘│ ││├┤
+  //  o╚═╝╚═╝╩═╝╩╝╚╝ ╩ ┴└─└─┘  └─┘ └┘ └─┘┴└─┴└─┴─┴┘└─┘
+  //  ┌─  ┌─┐┌─┐┬─┐  ┌─┐┬ ┬┌┬┐┌─┐┌┬┐┌─┐┌┬┐┌─┐┌┬┐  ┌┬┐┌─┐┌─┐┌┬┐┌─┐  ─┐
+  //  │   ├┤ │ │├┬┘  ├─┤│ │ │ │ ││││├─┤ │ ├┤  ││   │ ├┤ └─┐ │ └─┐   │
+  //  └─  └  └─┘┴└─  ┴ ┴└─┘ ┴ └─┘┴ ┴┴ ┴ ┴ └─┘─┴┘   ┴ └─┘└─┘ ┴ └─┘  ─┘
+  // > An .eslintrc configuration override for use with the tests in this directory.
+  //
+  // (See .eslintrc in the root directory of this package for more info.)
+  "extends": [
+    "../.eslintrc"
+  ],
+  "env": {
+    "mocha": true
+  },
+  // For convenience, some additional globals:
+  "globals": {
+    "expect": true,
+    "SAILS_SID_COOKIE": true,
+    "CSRF_TOKEN": true,
+    // ES6 Proxy
+    "Proxy": true
+  },
+
+  "rules": {
+    "prefer-arrow-callback":        ["off"]
+  }
+}
