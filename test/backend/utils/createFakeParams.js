@@ -4,7 +4,7 @@ const faker = require('faker');
  * Does not create entities, just populates with random params
  *
  */
-function createFakeParams(inputs) {
+function createFakeParams(inputs, overwrite={}) {
 
     const params = {};
 
@@ -29,7 +29,7 @@ function createFakeParams(inputs) {
 
     }
 
-    return params;
+    return { ...params, ...overwrite };
 }
 
 module.exports = createFakeParams;
