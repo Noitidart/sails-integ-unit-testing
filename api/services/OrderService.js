@@ -4,11 +4,14 @@ const { pick } = require('lodash');
 const { getRoomsOfSocket } = require('../../lib/sockets');
 const { OrderStatus } = require('../../types');
 
-const ACTIVE_ORDERS_ROOM = 'active-orders';
-
 const OrderService = {
+
+  ACTIVE_ORDERS_ROOM: 'active-orders',
+
+  SOCKET_EVENT_NAME: 'order-created-or-updated',
+
   broadcastOrder: function(order) {
-    sails.sockets.broadcast(ACTIVE_ORDERS_ROOM, 'order-created-or-updated', order);
+    sails.sockets.broadcast(this.ACTIVE_ORDERS_ROOM, this.SOCKET_EVENT_NAME, order);
   },
 
   /**
@@ -19,6 +22,8 @@ const OrderService = {
     const order = await Order.create(pick(softOrder, 'clientId', 'name', 'destination', 'status')).fetch();
 
     OrderService.broadcastOrder(order);
+
+    return order;
   },
 
   /**
@@ -37,11 +42,11 @@ const OrderService = {
     });
 
     // check if subscribed to another order- room, if it is, then leave it
-    const isInActiveOrdersRoom = (await getRoomsOfSocket(req)).includes(ACTIVE_ORDERS_ROOM);
+    const isInActiveOrdersRoom = (await getRoomsOfSocket(req)).includes(this.ACTIVE_ORDERS_ROOM);
     if (isInActiveOrdersRoom && !onlyActive) {
-      await new Promise(resolve => sails.sockets.leave(req, ACTIVE_ORDERS_ROOM, resolve));
+      await new Promise(resolve => sails.sockets.leave(req, this.ACTIVE_ORDERS_ROOM, resolve));
     } else if (!isInActiveOrdersRoom && onlyActive) {
-      const joinErr = await new Promise(resolve => sails.sockets.join(req, ACTIVE_ORDERS_ROOM, resolve));
+      const joinErr = await new Promise(resolve => sails.sockets.join(req, this.ACTIVE_ORDERS_ROOM, resolve));
       if (joinErr) throw new Error('SOCKET_JOIN_ERROR');
     }
 
