@@ -120,7 +120,7 @@ function DataViews({ _csrf }) {
       })
     );
 
-  const isPageDataOk = !pageData.isLoading && !pageData.error;
+  const isPageSuccesfullyLoaded = !pageData.isLoading && !pageData.error;
 
   const getHandleActiveFilterClick = nextFilter => e => {
     e.preventDefault();
@@ -178,11 +178,9 @@ function DataViews({ _csrf }) {
 
       {pageData.isLoading && <p className="lead text-center">Loading...</p>}
 
-      {!pageData.isLoading && pageData.error && (
-        <p className="lead text-center">An error occured. {pageData.error}</p>
-      )}
+      {!pageData.isLoading && pageData.error && <p className="lead text-center">An error occured. {pageData.error}</p>}
 
-      {isPageDataOk && (
+      {isPageSuccesfullyLoaded && (
         <>
           {pageData.viewType === ViewType.ACTIVE && (
             <>
@@ -249,9 +247,9 @@ function DataViews({ _csrf }) {
         </>
       )}
 
-      {isPageDataOk && filteredResults.length === 0 && <p className="lead text-center">No orders</p>}
+      {isPageSuccesfullyLoaded && filteredResults.length === 0 && <p className="lead text-center">No orders</p>}
 
-      {isPageDataOk && filteredResults.length > 0 && (
+      {isPageSuccesfullyLoaded && filteredResults.length > 0 && (
         <div>
           <div className="row font-weight-bold text-center mb-1">
             <div className="col-2">Status</div>
