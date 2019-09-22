@@ -13,10 +13,10 @@ const OrderService = {
 
   /**
    *
-   * @param {*} partialOrder
+   * @param {*} softOrder - not-yet created order. meaning no id.
    */
-  createOrder: async function(partialOrder) {
-    const order = await Order.create(pick(partialOrder, 'clientId', 'name', 'destination', 'status')).fetch();
+  createOrder: async function(softOrder) {
+    const order = await Order.create(pick(softOrder, 'clientId', 'name', 'destination', 'status')).fetch();
 
     OrderService.broadcastOrder(order);
   },

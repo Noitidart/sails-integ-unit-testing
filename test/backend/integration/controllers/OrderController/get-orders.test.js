@@ -147,6 +147,8 @@ describe('OrderController', () => {
 
     it('does not return inative orders if onlyActive=true', async () => {
 
+      await cleanDatabase();
+
       await createFake(Order, {
         Order: {
           status: OrderStatus.CANCELLED
