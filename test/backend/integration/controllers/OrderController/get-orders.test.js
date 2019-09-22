@@ -1,3 +1,4 @@
+const { stub } = require('sinon');
 const supertestWithCsrf = require('../../../utils/supertestWithCsrf');
 const cleanDatabase = require('../../../utils/cleanDatabase');
 const createFake = require('../../../utils/createFake');
@@ -24,10 +25,21 @@ describe('OrderController', () => {
 
     });
 
-    it('success if it is a socket request', async () => {
+    it('fails if cannot join room when getting active ordres', async () => {
+
+      await expect(new Promise(resolve => io.socket.get(sails.getUrlFor('orders/get-orders') + '?onlyActive=true', (_, jwres) => resolve(jwres))))
+        .to.eventually.not.have.property('statusCode', 424);
+
+    });
+
+    it('fails if socket fails to join', async () => {
+
+      joinStub = stub(sails.sockets, 'join').callsArgWith(2, 'foo error');
 
       await expect(new Promise(resolve => io.socket.get(sails.getUrlFor('orders/get-orders') + '?onlyActive=false', (_, jwres) => resolve(jwres))))
-        .to.eventually.not.have.property('statusCode', 400);
+        .to.eventually.not.have.property('statusCode', 424);
+
+      joinStub.restore();
 
     });
 

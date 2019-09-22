@@ -23,7 +23,11 @@ module.exports = {
     },
     notSocket: {
       statusCode: 400
+    },
+    failedJoin: {
+      statusCode: 500
     }
+
   },
 
 
@@ -33,6 +37,7 @@ module.exports = {
       return exits.success(await OrderService.getOrders(inputs.onlyActive, this.req));
     } catch(err) {
       if (err.message === 'NOT_SOCKET') return exits.notSocket();
+      if (err.message === 'SOCKET_JOIN_ERROR') return exits.failedJoin();
       throw err;
     }
 
