@@ -4,6 +4,8 @@ import produce from 'immer';
 
 import EditableRow from './EditableRow';
 
+import { OrderStatus } from '../../../../types';
+
 const ViewType = {
   ACTIVE: 'ACTIVE',
   HISTORY: 'HISTORY'
@@ -24,15 +26,14 @@ function DataViews({ _csrf }) {
       error: null
     }
   });
-
   const [activeFilter, setActiveFilter] = useState(ActiveFilterType.ALL);
   const [cookedWithinSec, setCookedWithinSec] = useState('5');
   const forceUpdate = useForceUpdate();
 
-  // listen for socket events
+  // listen for socket events if on active page
   useEffect(() => {
     const handleOrderCreatedOrUpdated = order => {
-      const isUpdatedOrderInactive = ['DELIVERED', 'CANCELLED'].includes(order.status);
+      const isUpdatedOrderInactive = [OrderStatus.DELIVERED, OrderStatus.CANCELLED].includes(order.status);
       setPagination(
         produce(draft => {
           const prevOrderIndex = draft.network.results.findIndex(prevOrder => prevOrder.id === order.id);
@@ -46,8 +47,7 @@ function DataViews({ _csrf }) {
           } else {
             if (!prevOrderDraft) {
               // need to add it
-              // find index of element that has an orderNumber higher then incoming order's
-              const insertAtIndex = draft.network.results.findIndex(result => result.orderNumber > order.orderNumber);
+              const insertAtIndex = draft.network.results.findIndex(result => result.createdAt > order.creatdAt);
               if (insertAtIndex === -1) {
                 draft.network.results.push(order);
               } else {
@@ -134,7 +134,7 @@ function DataViews({ _csrf }) {
   let filteredResults = pagination.network.results;
   if (pagination.viewType === ViewType.ACTIVE) {
     if (activeFilter === ActiveFilterType.COOKING) {
-      filteredResults = filteredResults.filter(order => order.status === 'CREATED');
+      filteredResults = filteredResults.filter(order => order.status === OrderStatus.CREATED);
     } else if (activeFilter === ActiveFilterType.JUST_COOKED) {
       const timeToLive = cookedWithinSec * 1000;
 
@@ -178,7 +178,7 @@ function DataViews({ _csrf }) {
         {pagination.viewType === ViewType.ACTIVE ? 'History' : 'Active Orders'}
       </button>
 
-      <h2 className="mb-3">{pagination.viewType === ViewType.ACTIVE ? 'Active Orders' : 'Order History'}</h2>
+      <h2 className="mb-3">{pagination.viewType === ViewType.ACTIVE ? 'View Active Orders' : 'View Order History'}</h2>
 
       {pagination.network.isLoading && <p className="lead text-center">Loading...</p>}
 
@@ -258,11 +258,10 @@ function DataViews({ _csrf }) {
       {networkOk && filteredResults.length > 0 && (
         <div>
           <div className="row font-weight-bold text-center mb-1">
-            <div className="col-1">#</div>
             <div className="col-2">Status</div>
             <div className="col-2">Name</div>
             <div className="col-4">Destination</div>
-            <div className="col-2">Last Updated</div>
+            <div className="col-3">Last Updated</div>
             <div className="col-1" />
           </div>
           {filteredResults.map(result => (

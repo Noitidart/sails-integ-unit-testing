@@ -38,7 +38,6 @@ function EditableRow({ result, _csrf, shouldShowTools }) {
         return (
           <form onSubmit={handleSubmit}>
             <div className="row text-center py-3">
-              <div className="col-1 font-weight-bold">{result.orderNumber}</div>
               <div className="col-2">
                 {!isEditing ? (
                   initialValues.status
@@ -70,7 +69,7 @@ function EditableRow({ result, _csrf, shouldShowTools }) {
                   />
                 )}
               </div>
-              <div className="col-2">{moment.utc(result.updatedAt).format('[Today] LTS')}</div>
+              <div className="col-3">{moment.utc(result.updatedAt).format('[Today] LTS')}</div>
               <div className="col-1">
                 {shouldShowTools && (
                   <>

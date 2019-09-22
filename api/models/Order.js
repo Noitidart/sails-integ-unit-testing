@@ -1,3 +1,5 @@
+const { OrderStatus } = require('../../types');
+
 /**
  * Order.js
  *
@@ -27,17 +29,12 @@ module.exports = {
     status: {
       type: 'string',
       required: true,
-      isIn: ['CREATED', 'COOKED', 'CANCELLED', 'DRIVER_RECEIVED', 'DELIVERED'],
+      isIn: Object.keys(OrderStatus),
     },
 
     destination: {
       type: 'string',
       required: true
-    },
-
-    orderNumber: {
-      type: 'number',
-      description: 'This is auto-incrmented.'
     },
 
     cookedAt: {
@@ -55,16 +52,6 @@ module.exports = {
     //  ╠═╣╚═╗╚═╗║ ║║  ║╠═╣ ║ ║║ ║║║║╚═╗
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
-  },
-
-  // Lifecycle
-
-  beforeCreate: function(valuesToSet, proceed) {
-    Sequence.next('order', (err, num) => {
-      if (err) return proceed(err);
-      valuesToSet.orderNumber = num;
-      proceed();
-    });
   }
 
 };

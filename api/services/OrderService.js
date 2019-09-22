@@ -33,7 +33,7 @@ const OrderService = {
     const where = onlyActive ? { status: { '!=': [OrderStatus.DELIVERED, OrderStatus.CANCELLED] } } : undefined;
     const orders = await Order.find({
       where,
-      sort: 'orderNumber ASC'
+      sort: 'createdAt ASC'
     });
 
     // check if subscribed to another order- room, if it is, then leave it
@@ -81,7 +81,7 @@ const OrderService = {
       };
 
       setTimeout(() => {
-        if (partialOrder.status === 'CREATED') {
+        if (partialOrder.status === OrderStatus.CREATED) {
           OrderService.createOrder(partialOrder);
         } else {
           OrderService.updateOrder(partialOrder);

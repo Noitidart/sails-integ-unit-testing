@@ -1,4 +1,4 @@
-const { omit } = require('lodash');
+const { OrderStatus } = require('../../../types');
 
 module.exports = {
 
@@ -16,7 +16,7 @@ module.exports = {
     },
     status: {
       type: 'string',
-      isIn: ['CREATED', 'COOKED', 'CANCELLED', 'DRIVER_RECEIVED', 'DELIVERED'],
+      isIn: Object.keys(OrderStatus),
     },
     name: {
       type: 'string'
