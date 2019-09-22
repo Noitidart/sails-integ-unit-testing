@@ -57,7 +57,7 @@ const OrderService = {
 
   /**
    *
-   * @param {*} partialOrder
+   * @param {*} partialOrder - must have `clientId`, and all other keys optional
    */
   updateOrder: async function(partialOrder) {
     const order = await Order.updateOne({ clientId: partialOrder.clientId }).set({
