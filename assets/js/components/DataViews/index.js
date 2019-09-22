@@ -15,7 +15,7 @@ const ActiveFilterType = {
   JUST_COOKED: 'Just Cooked'
 };
 
-function DataViews({ _csrf, me }) {
+function DataViews({ _csrf }) {
   const [pagination, setPagination] = useState({
     viewType: ViewType.ACTIVE,
     network: {
@@ -270,7 +270,6 @@ function DataViews({ _csrf, me }) {
               key={result.id}
               result={result}
               _csrf={_csrf}
-              isLoggedIn={Boolean(me)}
               shouldShowTools={pagination.viewType === ViewType.HISTORY}
             />
           ))}

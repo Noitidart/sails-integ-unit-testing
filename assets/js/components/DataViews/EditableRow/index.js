@@ -6,7 +6,7 @@ import { pick } from 'lodash';
 
 import { OrderStatus } from '../../../../../types';
 
-function EditableRow({ isLoggedIn, result, _csrf, shouldShowTools }) {
+function EditableRow({ result, _csrf, shouldShowTools }) {
   const [isEditing, setIsEditing] = useState(false);
 
   const submit = async (values, { reset }) => {
@@ -32,15 +32,6 @@ function EditableRow({ isLoggedIn, result, _csrf, shouldShowTools }) {
     }
   };
 
-  const startEditing = () => {
-    if (isLoggedIn) {
-      setIsEditing(true);
-    } else {
-      alert(
-        'You are not logged in! Only logged in users can edit. Login as "admin@eample.com" with password "abc123".'
-      );
-    }
-  };
   return (
     <Form onSubmit={submit} initialValues={result}>
       {({ handleSubmit, pristine, submitting, initialValues }) => {
@@ -54,7 +45,7 @@ function EditableRow({ isLoggedIn, result, _csrf, shouldShowTools }) {
                 ) : (
                   <Field component="select" name="status" className="form-control" disabled={submitting}>
                     {Object.keys(OrderStatus).map(status => (
-                      <option value={status}>{status}</option>
+                      <option key={status} value={status}>{status}</option>
                     ))}
                   </Field>
                 )}
@@ -84,7 +75,7 @@ function EditableRow({ isLoggedIn, result, _csrf, shouldShowTools }) {
                 {shouldShowTools && (
                   <>
                     {!isEditing && (
-                      <button type="button" className="btn btn-sm btn-link" onClick={startEditing}>
+                      <button type="button" className="btn btn-sm btn-link" onClick={() => setIsEditing(true)}>
                         <i className="fa fa-pencil" />
                       </button>
                     )}
