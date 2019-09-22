@@ -20,13 +20,21 @@ module.exports = {
   exits: {
     success: {
       statusCode: 200
+    },
+    notSocket: {
+      statusCode: 400
     }
   },
 
 
   fn: async function (inputs, exits) {
 
-    return exits.success(await OrderService.getOrders(inputs.onlyActive, this.req));
+    try {
+      return exits.success(await OrderService.getOrders(inputs.onlyActive, this.req));
+    } catch(err) {
+      if (err.message === 'NOT_SOCKET') return exits.notSocket();
+      throw err;
+    }
 
   }
 
