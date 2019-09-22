@@ -16,10 +16,13 @@ const OrderService = {
 
   /**
    *
-   * @param {*} softOrder - not-yet created order. meaning no id.
+   * @param {*} softOrder - not-yet created order. meaning no id. status is ignored if present, always created in CREATED status.
    */
   createOrder: async function(softOrder) {
-    const order = await Order.create(pick(softOrder, 'clientId', 'name', 'destination', 'status')).fetch();
+    const order = await Order.create({
+      ...pick(softOrder, 'clientId', 'name', 'destination'),
+      status: OrderStatus.CREATED
+    }).fetch();
 
     OrderService.broadcastOrder(order);
 
