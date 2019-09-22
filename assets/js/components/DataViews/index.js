@@ -18,13 +18,11 @@ const ActiveFilterType = {
 };
 
 function DataViews({ _csrf }) {
-  const [pagination, setPagination] = useState({
+  const [pageData, setPageData] = useState({
     viewType: ViewType.ACTIVE,
-    network: {
-      isLoading: true,
-      results: [],
-      error: null
-    }
+    isLoading: true,
+    results: [],
+    error: null
   });
   const [activeFilter, setActiveFilter] = useState(ActiveFilterType.ALL);
   const [cookedWithinSec, setCookedWithinSec] = useState('5');
@@ -34,26 +32,24 @@ function DataViews({ _csrf }) {
   useEffect(() => {
     const handleOrderCreatedOrUpdated = order => {
       const isUpdatedOrderInactive = [OrderStatus.DELIVERED, OrderStatus.CANCELLED].includes(order.status);
-      setPagination(
+      setPageData(
         produce(draft => {
-          const prevOrderIndex = draft.network.results.findIndex(prevOrder => prevOrder.id === order.id);
-          const prevOrderDraft = draft.network.results[prevOrderIndex];
+          const prevOrderIndex = draft.results.findIndex(prevOrder => prevOrder.id === order.id);
+          const prevOrderDraft = draft.results[prevOrderIndex];
           if (isUpdatedOrderInactive) {
             if (prevOrderDraft) {
               // need to remove it
-              draft.network.results.splice(prevOrderIndex, 1);
-              draft.network.total--;
+              draft.results.splice(prevOrderIndex, 1);
             }
           } else {
             if (!prevOrderDraft) {
               // need to add it
-              const insertAtIndex = draft.network.results.findIndex(result => result.createdAt > order.creatdAt);
+              const insertAtIndex = draft.results.findIndex(result => result.createdAt > order.creatdAt);
               if (insertAtIndex === -1) {
-                draft.network.results.push(order);
+                draft.results.push(order);
               } else {
-                draft.network.results.splice(insertAtIndex, 0, order);
+                draft.results.splice(insertAtIndex, 0, order);
               }
-              draft.network.total++;
             } else {
               // need to update it
               Object.assign(prevOrderDraft, order);
@@ -63,23 +59,23 @@ function DataViews({ _csrf }) {
       );
     };
 
-    if (pagination.viewType === ViewType.ACTIVE) {
+    if (pageData.viewType === ViewType.ACTIVE) {
       io.socket.on('order-created-or-updated', handleOrderCreatedOrUpdated);
     }
 
     return () => {
-      if (pagination.viewType === ViewType.ACTIVE) {
+      if (pageData.viewType === ViewType.ACTIVE) {
         io.socket.off('order-created-or-updated', handleOrderCreatedOrUpdated);
       }
     };
-  }, [pagination.viewType]);
+  }, [pageData.viewType]);
 
   // fetch page results
   useEffect(() => {
-    setPagination(
+    setPageData(
       produce(draft => {
-        draft.network.isLoading = true;
-        draft.network.error = null;
+        draft.isLoading = true;
+        draft.error = null;
       })
     );
 
@@ -93,46 +89,46 @@ function DataViews({ _csrf }) {
           io.socket.get(
             '/api/v1/orders?' +
               new URLSearchParams({
-                onlyActive: pagination.viewType === ViewType.ACTIVE ? true : false
+                onlyActive: pageData.viewType === ViewType.ACTIVE ? true : false
               }),
             resolve
           );
         });
 
-        setPagination(
+        setPageData(
           produce(draft => {
-            draft.network.isLoading = false;
-            draft.network.results = res.results;
+            draft.isLoading = false;
+            draft.results = res.results;
           })
         );
       } catch (err) {
-        setPagination(
+        setPageData(
           produce(draft => {
-            draft.network.isLoading = false;
-            draft.network.error = err.message;
+            draft.isLoading = false;
+            draft.error = err.message;
           })
         );
       }
     })();
-  }, [pagination.viewType]);
+  }, [pageData.viewType]);
 
   const toggleViewType = () =>
-    setPagination(
+    setPageData(
       produce(draft => {
         draft.isLoading = true;
         draft.viewType = draft.viewType === ViewType.ACTIVE ? ViewType.HISTORY : ViewType.ACTIVE;
       })
     );
 
-  const networkOk = !pagination.network.isLoading && !pagination.network.error;
+  const isPageDataOk = !pageData.isLoading && !pageData.error;
 
   const getHandleActiveFilterClick = nextFilter => e => {
     e.preventDefault();
     setActiveFilter(nextFilter);
   };
 
-  let filteredResults = pagination.network.results;
-  if (pagination.viewType === ViewType.ACTIVE) {
+  let filteredResults = pageData.results;
+  if (pageData.viewType === ViewType.ACTIVE) {
     if (activeFilter === ActiveFilterType.COOKING) {
       filteredResults = filteredResults.filter(order => order.status === OrderStatus.CREATED);
     } else if (activeFilter === ActiveFilterType.JUST_COOKED) {
@@ -170,25 +166,25 @@ function DataViews({ _csrf }) {
     return () => {
       window.clearTimeout(savedDeathTimer.current);
     };
-  }, [activeFilter, cookedWithinSec, pagination.network.results]);
+  }, [activeFilter, cookedWithinSec, pageData.results]);
 
   return (
     <div className="my-5">
       <button type="button" className="btn btn-outline-info float-right" onClick={toggleViewType}>
-        {pagination.viewType === ViewType.ACTIVE ? 'History' : 'Active Orders'}
+        {pageData.viewType === ViewType.ACTIVE ? 'View History' : 'View Active Orders'}
       </button>
 
-      <h2 className="mb-3">{pagination.viewType === ViewType.ACTIVE ? 'View Active Orders' : 'View Order History'}</h2>
+      <h2 className="mb-3">{pageData.viewType === ViewType.ACTIVE ? 'Active Orders' : 'Order History'}</h2>
 
-      {pagination.network.isLoading && <p className="lead text-center">Loading...</p>}
+      {pageData.isLoading && <p className="lead text-center">Loading...</p>}
 
-      {!pagination.network.isLoading && pagination.network.error && (
-        <p className="lead text-center">An error occured. {pagination.network.error}</p>
+      {!pageData.isLoading && pageData.error && (
+        <p className="lead text-center">An error occured. {pageData.error}</p>
       )}
 
-      {networkOk && (
+      {isPageDataOk && (
         <>
-          {pagination.viewType === ViewType.ACTIVE && (
+          {pageData.viewType === ViewType.ACTIVE && (
             <>
               <div className="row mb-2">
                 <div className="col-3">
@@ -253,9 +249,9 @@ function DataViews({ _csrf }) {
         </>
       )}
 
-      {networkOk && filteredResults.length === 0 && <p className="lead text-center">No orders</p>}
+      {isPageDataOk && filteredResults.length === 0 && <p className="lead text-center">No orders</p>}
 
-      {networkOk && filteredResults.length > 0 && (
+      {isPageDataOk && filteredResults.length > 0 && (
         <div>
           <div className="row font-weight-bold text-center mb-1">
             <div className="col-2">Status</div>
@@ -269,7 +265,7 @@ function DataViews({ _csrf }) {
               key={result.id}
               result={result}
               _csrf={_csrf}
-              shouldShowTools={pagination.viewType === ViewType.HISTORY}
+              shouldShowTools={pageData.viewType === ViewType.HISTORY}
             />
           ))}
         </div>
