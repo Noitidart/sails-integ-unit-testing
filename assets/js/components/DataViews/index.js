@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import useForceUpdate from 'use-force-update';
 import produce from 'immer';
-import classnames from 'classnames';
 
 import EditableRow from './EditableRow';
 
@@ -17,24 +17,21 @@ const ActiveFilterType = {
 
 function DataViews({ _csrf, me }) {
   const [pagination, setPagination] = useState({
-    page: 1,
-    size: 30,
     viewType: ViewType.ACTIVE,
     network: {
       isLoading: true,
       results: [],
-      total: 0,
       error: null
     }
   });
 
   const [activeFilter, setActiveFilter] = useState(ActiveFilterType.ALL);
   const [cookedWithinSec, setCookedWithinSec] = useState('5');
+  const forceUpdate = useForceUpdate();
 
   // listen for socket events
   useEffect(() => {
     const handleOrderCreatedOrUpdated = order => {
-      console.log('order created or updated, order number:', order.orderNumber);
       const isUpdatedOrderInactive = ['DELIVERED', 'CANCELLED'].includes(order.status);
       setPagination(
         produce(draft => {
@@ -43,14 +40,12 @@ function DataViews({ _csrf, me }) {
           if (isUpdatedOrderInactive) {
             if (prevOrderDraft) {
               // need to remove it
-              console.log('removing it as its inactive and currently present');
               draft.network.results.splice(prevOrderIndex, 1);
               draft.network.total--;
             }
           } else {
             if (!prevOrderDraft) {
               // need to add it
-              console.log('adding it as its active but not present');
               // find index of element that has an orderNumber higher then incoming order's
               const insertAtIndex = draft.network.results.findIndex(result => result.orderNumber > order.orderNumber);
               if (insertAtIndex === -1) {
@@ -61,7 +56,6 @@ function DataViews({ _csrf, me }) {
               draft.network.total++;
             } else {
               // need to update it
-              console.log('updating it as its active and present');
               Object.assign(prevOrderDraft, order);
             }
           }
@@ -75,7 +69,6 @@ function DataViews({ _csrf, me }) {
 
     return () => {
       if (pagination.viewType === ViewType.ACTIVE) {
-        console.log('unregistering handlers');
         io.socket.off('order-created-or-updated', handleOrderCreatedOrUpdated);
       }
     };
@@ -96,12 +89,10 @@ function DataViews({ _csrf, me }) {
 
       let res;
       try {
-        res = await new Promise((resolve, reject) => {
+        res = await new Promise(resolve => {
           io.socket.get(
             '/api/v1/orders?' +
               new URLSearchParams({
-                page: pagination.page,
-                size: pagination.size,
                 type: pagination.viewType === ViewType.ACTIVE ? 'active' : 'all'
               }),
             resolve
@@ -112,7 +103,6 @@ function DataViews({ _csrf, me }) {
           produce(draft => {
             draft.network.isLoading = false;
             draft.network.results = res.results;
-            draft.network.total = res.total;
           })
         );
       } catch (err) {
@@ -124,47 +114,63 @@ function DataViews({ _csrf, me }) {
         );
       }
     })();
-  }, [pagination.page, pagination.size, pagination.viewType]);
+  }, [pagination.viewType]);
 
   const toggleViewType = () =>
     setPagination(
       produce(draft => {
         draft.isLoading = true;
         draft.viewType = draft.viewType === ViewType.ACTIVE ? ViewType.HISTORY : ViewType.ACTIVE;
-        draft.page = 1;
       })
     );
 
   const networkOk = !pagination.network.isLoading && !pagination.network.error;
-
-  const totalPages = Math.ceil(pagination.network.total / pagination.size);
-
-  const getHandlePaginationClick = nextSize => e => {
-    e.preventDefault();
-    setPagination(
-      produce(draft => {
-        draft.size = nextSize;
-      })
-    );
-  };
 
   const getHandleActiveFilterClick = nextFilter => e => {
     e.preventDefault();
     setActiveFilter(nextFilter);
   };
 
-  const getHandlePageClick = nextPage => e => {
-    e.preventDefault();
-    setPagination(
-      produce(draft => {
-        draft.page = nextPage;
-      })
-    );
-  };
+  let filteredResults = pagination.network.results;
+  if (pagination.viewType === ViewType.ACTIVE) {
+    if (activeFilter === ActiveFilterType.COOKING) {
+      filteredResults = filteredResults.filter(order => order.status === 'CREATED');
+    } else if (activeFilter === ActiveFilterType.JUST_COOKED) {
+      const timeToLive = cookedWithinSec * 1000;
 
-  const startIndex = pagination.size * (pagination.page - 1);
-  const endIndex = startIndex + pagination.size;
-  const pageOrders = pagination.network.results.slice(startIndex, endIndex);
+      filteredResults = filteredResults.filter(order => {
+        if (!order.cookedAt) return false;
+        const timeLived = Date.now() - order.cookedAt;
+        return timeLived < timeToLive;
+      });
+    }
+  }
+
+  // set timer to force update when something moves out of cookedWithinSec
+  const savedDeathTimer = useRef();
+  useEffect(() => {
+    if (activeFilter !== ActiveFilterType.JUST_COOKED || isNaN(cookedWithinSec) || filteredResults.length === 0) {
+      return;
+    }
+
+    const timeToLive = cookedWithinSec * 1000;
+
+    let timeTillFirstDeath = timeToLive;
+    filteredResults.forEach(order => {
+      const timeLived = Date.now() - order.cookedAt;
+      const timeTillDeath = Math.max(timeToLive - timeLived, 0);
+
+      if (timeTillDeath < timeTillFirstDeath) {
+        timeTillFirstDeath = timeTillDeath;
+      }
+    });
+
+    savedDeathTimer.current = window.setTimeout(forceUpdate, timeTillFirstDeath);
+
+    return () => {
+      window.clearTimeout(savedDeathTimer.current);
+    };
+  }, [activeFilter, cookedWithinSec, pagination.network.results]);
 
   return (
     <div className="my-5">
@@ -244,93 +250,12 @@ function DataViews({ _csrf, me }) {
               )}
             </>
           )}
-
-          <div className="row mb-2">
-            <div className="col-3">
-              <div className="dropdown">
-                <button
-                  className="btn btn-secondary dropdown-toggle"
-                  type="button"
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
-                  Per Page: {pagination.size}
-                </button>
-                <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                  <a className="dropdown-item" href="#" onClick={getHandlePaginationClick(5)}>
-                    5
-                  </a>
-                  <a className="dropdown-item" href="#" onClick={getHandlePaginationClick(10)}>
-                    10
-                  </a>
-                  <a className="dropdown-item" href="#" onClick={getHandlePaginationClick(25)}>
-                    25
-                  </a>
-                  <a className="dropdown-item" href="#" onClick={getHandlePaginationClick(100)}>
-                    100
-                  </a>
-                  <a className="dropdown-item" href="#" onClick={getHandlePaginationClick(500)}>
-                    500
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {pagination.network.total > 0 && (
-            <div className="row mb-2">
-              <div className="col-4">
-                <nav aria-label="Page navigation">
-                  <ul className="pagination">
-                    <li className={classnames('page-item', pagination.page === 1 && 'disabled')}>
-                      <a
-                        className="page-link"
-                        href="#"
-                        aria-label="Previous"
-                        onClick={getHandlePageClick(pagination.page - 1)}
-                      >
-                        <span aria-hidden="true">&laquo;</span>
-                        <span className="sr-only">Prev</span>
-                      </a>
-                    </li>
-                    {Array.from({ length: totalPages }, (_, index) => {
-                      const pageNumber = index + 1;
-                      return (
-                        <li
-                          className={classnames('page-item', pagination.page === pageNumber && 'active')}
-                          key={pageNumber}
-                        >
-                          <a className="page-link" href="#" onClick={getHandlePageClick(pageNumber)}>
-                            {pageNumber}
-                          </a>
-                        </li>
-                      );
-                    })}
-                    <li className={classnames('page-item', pagination.page === totalPages && 'disabled')}>
-                      <a
-                        className="page-link"
-                        href="#"
-                        aria-label="Next"
-                        onClick={getHandlePageClick(pagination.page + 1)}
-                      >
-                        <span aria-hidden="true">&raquo;</span>
-                        <span className="sr-only">Next</span>
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-              </div>
-            </div>
-          )}
         </>
       )}
 
-      {networkOk && pageOrders.length === 0 && (
-        <p className="lead text-center">{pagination.network.total > 0 ? 'No orders on this page' : 'No orders'}</p>
-      )}
+      {networkOk && filteredResults.length === 0 && <p className="lead text-center">No orders</p>}
 
-      {networkOk && pageOrders.length > 0 && (
+      {networkOk && filteredResults.length > 0 && (
         <div>
           <div className="row font-weight-bold text-center mb-1">
             <div className="col-1">#</div>
@@ -340,7 +265,7 @@ function DataViews({ _csrf, me }) {
             <div className="col-2">Last Updated</div>
             <div className="col-1" />
           </div>
-          {pageOrders.map(result => (
+          {filteredResults.map(result => (
             <EditableRow
               key={result.id}
               result={result}

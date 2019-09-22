@@ -36,29 +36,15 @@ const OrderService = {
    *
    * @param {"all" | "active"} type
    * @param {"all" | "active"} req
-   * @param {Object} options
-   * @param {number} [options.page] - starts at 1
-   * @param {number} [options.size] - if 0/null/undefined, then no pagination happens
    */
-  getOrders: async function(
-    type,
-    req,
-    {
-      page=1,
-      size=0
-    }
-  ) {
+  getOrders: async function(type, req) {
 
     if (!req.isSocket) throw new Error('NOT_SOCKET');
-
-    if (!size) page = 1;
 
     const where = type === 'active' ? { status: { '!=': ['DELIVERED', 'CANCELLED'] } } : undefined;
     const orders = await Order.find({
       where,
       sort: 'orderNumber ASC',
-      skip: size * (page - 1),
-      limit: size
     }).populate('events', { sort: 'createdAt ASC' });
 
     // check if subscribed to another order- room, if it is, then leave it
@@ -71,10 +57,7 @@ const OrderService = {
     }
 
     return {
-      page,
-      size,
-      results: orders,
-      total: await Order.count(where)
+      results: orders
     };
   },
 
@@ -88,7 +71,7 @@ const OrderService = {
 
     const order = await Order.updateOne({ clientId: partialOrder.clientId }).set({
       ...pick(partialOrder, 'clientId', 'name', 'destination', 'status'),
-      ...partialOrder.eventName === 'COOKED' && { cookedAt: Date.now() }
+      ...partialOrder.status === 'COOKED' && { cookedAt: Date.now() }
     });
 
     if (!order) throw new Error('NOT_FOUND');

@@ -10,15 +10,6 @@ module.exports = {
 
 
   inputs: {
-    page: {
-      type: 'number',
-      required: true,
-      min: 1
-    },
-    size: {
-      type: 'number',
-      defaultsTo: 0
-    },
     type: {
       type: 'string',
       required: true,
@@ -36,7 +27,7 @@ module.exports = {
 
   fn: async function (inputs, exits) {
 
-    return exits.success(await OrderService.getOrders(inputs.type, this.req, pick(inputs, 'page', 'size')));
+    return exits.success(await OrderService.getOrders(inputs.type, this.req));
 
   }
 
