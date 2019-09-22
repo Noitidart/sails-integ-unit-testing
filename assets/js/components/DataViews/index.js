@@ -70,7 +70,7 @@ function DataViews({ _csrf }) {
     };
   }, [pageData.viewType]);
 
-  // fetch page results
+  // fetch page results on view change
   useEffect(() => {
     setPageData(
       produce(draft => {
