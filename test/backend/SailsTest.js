@@ -1,3 +1,6 @@
+const ioClient = require('socket.io-client');
+const sailsIO = require('../../assets/dependencies/sails.io');
+
 /**
  * Singleton
  */
@@ -75,8 +78,6 @@ class SailsTest {
     if (liftErr) {
       throw liftErr;
     } else {
-      // here you can load fixtures, etc.
-      // (for example, you might want to create some records in the database)
 
       // Do request for getting CSRF material (token and cookie) for Cloud and supertest
 
@@ -101,6 +102,26 @@ class SailsTest {
       } catch(err) {
         throw new Error('Test runner could not parse the `set-cookie` response header from the Sails server.\nDetails:\n'+err.stack);
       }
+
+      // Instantiate socket client.
+
+      if (global.io) throw new Error('Test runner cannot expose `io` -- that global already exists!');
+
+      global.io = sailsIO(ioClient);
+      io.sails.url = sails.config.custom.baseUrl;
+      io.sails.environment = 'production'; // Disable the sails.io.js client's logger
+      io.sails.reconnection = false; // Don't automatically reconnect after being disconnected
+      io.sails.initialConnectionHeaders = {
+        'x-csrf-token': CSRF_TOKEN,
+        'cookie': SAILS_SID_COOKIE
+      };
+
+      // Wait till socket connects
+      await new Promise(resolve => io.socket.on('connect', function resolver() {
+        resolve();
+        io.socket.off('connect', resolver);
+      }));
+
     }
   }
 
