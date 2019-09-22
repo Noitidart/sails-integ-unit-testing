@@ -26,4 +26,6 @@ module.exports.policies = {
 
   'orders/get-orders': true,
 
+  'orders/update-order': true,
+
 };
