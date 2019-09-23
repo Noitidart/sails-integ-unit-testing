@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useForceUpdate from 'use-force-update';
 import produce from 'immer';
+import { startCase } from 'lodash';
 
+import Dropdown from '../Dropdown';
 import EditableRow from './EditableRow';
 
 import { OrderStatus } from '../../../../types';
@@ -12,9 +14,9 @@ const ViewType = {
 };
 
 const ActiveFilterType = {
-  ALL: 'All',
-  COOKING: 'Cooking Now',
-  JUST_COOKED: 'Just Cooked'
+  ALL: 'ALL',
+  COOKING_NOW: 'COOKING_NOW',
+  JUST_COOKED: 'JUST_COOKED'
 };
 
 function DataViews({ _csrf }) {
@@ -122,11 +124,6 @@ function DataViews({ _csrf }) {
 
   const isPageSuccesfullyLoaded = !pageData.isLoading && !pageData.error;
 
-  const getHandleActiveFilterClick = nextFilter => e => {
-    e.preventDefault();
-    setActiveFilter(nextFilter);
-  };
-
   let filteredResults = pageData.results;
   if (pageData.viewType === ViewType.ACTIVE) {
     if (activeFilter === ActiveFilterType.COOKING) {
@@ -186,36 +183,12 @@ function DataViews({ _csrf }) {
             <>
               <div className="row mb-2">
                 <div className="col-3">
-                  <div className="dropdown">
-                    <button
-                      className="btn btn-secondary dropdown-toggle"
-                      type="button"
-                      data-toggle="dropdown"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                    >
-                      Filter: {activeFilter}
-                    </button>
-                    <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                      <a className="dropdown-item" href="#" onClick={getHandleActiveFilterClick(ActiveFilterType.ALL)}>
-                        All
-                      </a>
-                      <a
-                        className="dropdown-item"
-                        href="#"
-                        onClick={getHandleActiveFilterClick(ActiveFilterType.COOKING)}
-                      >
-                        Cooking Now
-                      </a>
-                      <a
-                        className="dropdown-item"
-                        href="#"
-                        onClick={getHandleActiveFilterClick(ActiveFilterType.JUST_COOKED)}
-                      >
-                        Just Cooked
-                      </a>
-                    </div>
-                  </div>
+                  <Dropdown
+                    values={Object.keys(ActiveFilterType).map(id => ({ id, label: startCase(id.toLowerCase()) }))}
+                    defaultValueId={activeFilter}
+                    onValueChange={value => setActiveFilter(value.id)}
+                    labelPrefix="Filter:"
+                  />
                 </div>
               </div>
 
