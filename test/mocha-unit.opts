@@ -1,4 +1,5 @@
 --require @babel/register
 --require jsdom-global/register
 --require test/chai.js
+--require test/suppress-unwanted-error-logs.js
 --bail
