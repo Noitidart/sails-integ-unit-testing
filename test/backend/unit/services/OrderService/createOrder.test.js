@@ -4,6 +4,7 @@ const cleanDatabase = require('../../../utils/cleanDatabase');
 const createFakeParams = require('../../../utils/createFakeParams');
 
 const OrderModel = require('../../../../../api/models/Order');
+const { OrderStatus } = require('../../../../../types');
 
 describe('OrderService', () => {
 
@@ -18,7 +19,7 @@ describe('OrderService', () => {
     it('creates order succesfully', async () => {
 
 
-      const softOrder = createFakeParams(OrderModel.attributes);
+      const softOrder = createFakeParams(OrderModel.attributes, { status: OrderStatus.CREATED });
 
       await expect(OrderService.createOrder(softOrder)).to.eventually.be.fulfilled;
 
@@ -30,7 +31,7 @@ describe('OrderService', () => {
 
     it('returns order succesfully', async () => {
 
-      const softOrder = createFakeParams(OrderModel.attributes);
+      const softOrder = createFakeParams(OrderModel.attributes, { status: OrderStatus.CREATED });
 
       await expect(OrderService.createOrder(softOrder)).to.eventually.be.an('object').that.includes(softOrder);
 
