@@ -62,8 +62,9 @@
   },
   "scripts": {
     "start": "NODE_ENV=production node app.js",
-    "test": "npm run test-backend && npm run test-frontend-unit && npm run test-frontend-integ && echo 'Done.'",
+    "test": "npm run test-backend && npm run test-frontend && echo 'Done.'",
     "test-backend": "mocha test/backend/lifecycle.test.js 'test/backend/**/*.test.js' --opts test/mocha.opts --slow 1500",
+    "test-frontend": "npm run test-frontend-unit && npm run test-frontend-integ",
     "test-frontend-integ": "mocha test/frontend/lifecycle.test.js 'test/frontend/**/*.test.js' --opts test/mocha.opts --slow 4000 --timeout 5000",
     "test-frontend-unit": "mocha 'assets/js/**/__tests__/*.test.js' --opts test/mocha-unit.opts --slow 1500",
     "lint": "./node_modules/eslint/bin/eslint.js . --max-warnings=0 --report-unused-disable-directives && echo '✔  Your .js files look so good.' && ./node_modules/htmlhint/bin/htmlhint -c ./.htmlhintrc views/*.ejs && ./node_modules/htmlhint/bin/htmlhint -c ./.htmlhintrc views/**/*.ejs && ./node_modules/htmlhint/bin/htmlhint -c ./.htmlhintrc views/**/**/*.ejs && ./node_modules/htmlhint/bin/htmlhint -c ./.htmlhintrc views/**/**/**/*.ejs && ./node_modules/htmlhint/bin/htmlhint -c ./.htmlhintrc views/**/**/**/**/*.ejs && ./node_modules/htmlhint/bin/htmlhint -c ./.htmlhintrc views/**/**/**/**/**/*.ejs && ./node_modules/htmlhint/bin/htmlhint -c ./.htmlhintrc views/**/**/**/**/**/**/*.ejs && echo '✔  So do your .ejs files.' && ./node_modules/lesshint/bin/lesshint assets/styles/ --max-warnings=0 && echo '✔  Your .less files look good, too.'",
